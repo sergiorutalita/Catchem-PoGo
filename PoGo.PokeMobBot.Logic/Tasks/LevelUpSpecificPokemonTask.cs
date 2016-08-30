@@ -90,16 +90,17 @@ namespace PoGo.PokeMobBot.Logic.Tasks
                 var pokemonSettings = (await session.Inventory.GetPokemonSettings()).ToList();
                 var setting = pokemonSettings.Single(q => q.PokemonId == pokemon.PokemonId);
                 var family = pokemonFamilies.First(q => q.FamilyId == setting.FamilyId);
-                session.EventDispatcher.Send(new PokemonStatsChangedEvent()
+                session.EventDispatcher.Send(new PokemonStatsChangedEvent
                 {
                     Name = !string.IsNullOrEmpty(pokemon.Nickname)
                         ? pokemon.Nickname
-                        : pokemon.PokemonId.ToString(),
+                        : session.Translation.GetPokemonName(pokemon.PokemonId),
                     Uid = pokemonId,
                     Id = pokemon.PokemonId,
                     Family = family.FamilyId,
                     Candy = family.Candy_,
                     Cp = latestSuccessResponse.UpgradedPokemon.Cp,
+                    MaxCp = (int)PokemonInfo.GetMaxCpAtTrainerLevel(latestSuccessResponse.UpgradedPokemon, session.Runtime.CurrentLevel),
                     Iv = latestSuccessResponse.UpgradedPokemon.CalculatePokemonPerfection(),
                     Favourite = pokemon.Favorite == 1
                 });

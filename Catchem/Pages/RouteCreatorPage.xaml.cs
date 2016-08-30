@@ -31,6 +31,12 @@ namespace Catchem.Pages
         private bool _builded;
         private List<GeoCoordinate> _buildedRoute;
         private bool _prefferMapzen;
+        private bool _manualRoute;
+
+        public bool StartExist
+        {
+            get { return _mapPoints.Any(x => x.IsStart); }
+        }
 
         public void SetGlobalSettings(CatchemSettings settings)
         {
@@ -105,8 +111,9 @@ namespace Catchem.Pages
                 }
             }
             _mapPoints.Add(marker);
-           RouteCreatorMap.Markers.Add(marker.Marker);
+            RouteCreatorMap.Markers.Add(marker.Marker);
             UpdateMarkerCounter();
+            CheckRouteServicePreffer();
         }
 
         private void UpdateMarkerCounter()
@@ -120,6 +127,7 @@ namespace Catchem.Pages
             rm.Marker.Clear();
             _mapPoints.Remove(rm);
             UpdateMarkerCounter();
+            CheckRouteServicePreffer();
         }
 
         private void MiSetStart_Click(object sender, RoutedEventArgs e)
@@ -207,24 +215,35 @@ namespace Catchem.Pages
                 : (botGoogle != null ? "google" : "mapzen");
         }
 
-        private async void BuildTheRoute_Click(object sender, RoutedEventArgs e)
+        private void CheckRouteServicePreffer()
         {
-            if (_mapPoints.Count < 2) return;
-            if (_mapPoints.Count > 20)
+            if (_mapPoints.Count > 20 && !_manualRoute)
             {
                 _prefferMapzen = true;
                 PrefferMapzenOverGoogleCb.IsChecked = true;
+                PrefferMapzenOverGoogleCb.IsEnabled = false;
             }
-            if (_mapPoints.Count > 47)
+            else if(_mapPoints.Count <= 20 && (_manualRoute || !PrefferMapzenOverGoogleCb.IsEnabled))
+            {
+                PrefferMapzenOverGoogleCb.IsEnabled = true;
+            }
+        }
+
+        private async void BuildTheRoute_Click(object sender, RoutedEventArgs e)
+        {
+            if (_mapPoints.Count < 2) return;
+            CheckRouteServicePreffer();
+            if (_mapPoints.Count > 47 && !_manualRoute)
             {
                 MessageBox.Show(
-                    "Too many waypoints, try to reduce them to 45, or wait for next releases, where that limit will be increased!",
+                    "Too many waypoints, try to reduce them to 47, or wait for next releases, where that limit will be increased!",
                     "Routing Error", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-                BotWindowData bot;
+            BuildingProgressBar.Value = 0;
+            BotWindowData bot;
             var route = GetWorkingRouting(out bot);
-            if (route == "error")
+            if (route == "error" && !_manualRoute)
             {
                 MessageBox.Show(
                     "You have to enter Google Direction API or Mapzen Valhalla API to any of your bots, before creating a route",
@@ -233,29 +252,39 @@ namespace Catchem.Pages
             }
 
             var start = _mapPoints.FirstOrDefault(x => x.IsStart) ?? _mapPoints.First();
+            BuildingProgressBar.Value = 10;
 
             RoutingResponse response = null;
             var cycleWp = _mapPoints.Where(x => !x.IsStart).Select(x => x.Location).ToList();
             cycleWp.Add(start.Location);
-            if (route == "google")
-            {
-                response = GoogleRouting.GetRoute(start.Location, null, bot.Session, cycleWp, true);
-            }
-            else if (route == "mapzen")
-            {
-                response = MapzenRouting.GetRoute(start.Location, null, bot.Session, cycleWp, true);
-            }
-            if (response == null || response.Coordinates.Count == 0) return;
+            List<GeoCoordinate> routePoints;
 
+            if (!_manualRoute)
+            {
+                if (route == "google")
+                {
+                    response = GoogleRouting.GetRoute(start.Location, null, bot.Session, cycleWp, true);
+                }
+                else if (route == "mapzen")
+                {
+                    response = MapzenRouting.GetRoute(start.Location, null, bot.Session, cycleWp, true);
+                }
+                if (response?.Coordinates == null || response.Coordinates.Count == 0) return;
+                routePoints = response.Coordinates.Select(wp => new GeoCoordinate(wp[0], wp[1])).ToList();
+            }
+            else
+            {
+                cycleWp.Insert(0, start.Location);
+                routePoints = new List<GeoCoordinate>(cycleWp);
+            }
+            BuildingProgressBar.Value = 60;
             _currentRoute?.Points?.Clear();
             if (_currentRoute == null)
             {
                 _currentRoute = new GMapRoute(new List<PointLatLng>());
                 RouteCreatorMap.Markers.Add(_currentRoute);
             }
-
-            var routePoints = response.Coordinates.Select(wp => new GeoCoordinate(wp[0], wp[1])).ToList();
-
+            BuildingProgressBar.Value = 70;
             _buildedRoute = new List<GeoCoordinate>(routePoints);
 
             foreach (var item in routePoints)
@@ -275,6 +304,7 @@ namespace Catchem.Pages
             {
                await bot.Session.MapzenApi.FillAltitude(_buildedRoute.ToList());
             }
+            BuildingProgressBar.Value = 100;
             _builded = true;
         }
 
@@ -285,10 +315,9 @@ namespace Catchem.Pages
 
         private void ClearRouteBuilder()
         {
-            if (_currentRoute != null)
-            {
-                RouteCreatorMap.Markers.Remove(_currentRoute);
-            }
+            _currentRoute?.Points.Clear();
+            _currentRoute?.RegenerateShape(RouteCreatorMap);
+            BuildingProgressBar.Value = 0;
             _builded = false;
             while (_mapPoints.Any())
             {
@@ -335,6 +364,7 @@ namespace Catchem.Pages
                 CreateNewMarker(new PointLatLng(wp.Latitude, wp.Longitude), start);
                 if (start) start = false;
             }
+            RouteCreatorMap.ZoomAndCenterMarkers(null);
         }
 
         private void PrefferMapzenOverGoogleCb_Checked(object sender, RoutedEventArgs e)
@@ -342,6 +372,13 @@ namespace Catchem.Pages
             var cb = sender as CheckBox;
             if (cb?.IsChecked == null) return;
             _prefferMapzen = (bool)cb.IsChecked;
+        }
+
+        private void ManualRoute_Checked(object sender, RoutedEventArgs e)
+        {
+            var cb = sender as CheckBox;
+            if (cb?.IsChecked == null) return;
+            _manualRoute = (bool)cb.IsChecked;
         }
     }
 }

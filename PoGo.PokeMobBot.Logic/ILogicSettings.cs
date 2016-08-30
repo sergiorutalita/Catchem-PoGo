@@ -90,6 +90,8 @@ namespace PoGo.PokeMobBot.Logic
 
         CustomRoute CustomRoute { get; }
 
+        bool LootPokestops { get; }
+
         //MapzenAPI
         bool UseMapzenApiElevation { get; }
         string MapzenApiElevationKey { get; }
@@ -108,7 +110,7 @@ namespace PoGo.PokeMobBot.Logic
         double DelayEvolveVariation { get; }
         int DelayPokestop { get; }
         int DelayPositionCheckState { get; }
-        int DelayRecyleItem { get; }
+        int DelayRecycleItem { get; }
         int DelaySnipePokemon { get; }
         int DelaySoftbanRetry { get; }
         int DelayTransferPokemon { get; }

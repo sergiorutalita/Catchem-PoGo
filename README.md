@@ -5,6 +5,11 @@
 
 <p align="center"><a href="https://discord.gg/pPwxX8Q"><img src="https://discordapp.com/api/guilds/212977806819196938/widget.png?style=banner2"/></a></p>
 <p align="center"><img src="https://img.shields.io/github/downloads/Lunat1q/Catchem-PoGo/total.svg"/><a href="https://github.com/Lunat1q/Catchem-PoGo/releases/latest"><img src="https://img.shields.io/github/downloads/Lunat1q/Catchem-PoGo/latest/total.svg"/></a></p>
+
+<p align="center">THERE IS ONLY <b>ONE</b> OFFICIAL <a href="https://discord.gg/pPwxX8Q">DISCORD SERVER</a></p>
+
+<h2>Download</h2>
+You can download this bot  <a href="https://github.com/Lunat1q/Catchem-PoGo/releases/latest">HERE</a>
  
 <h2>Donating</h2>
 If you really like this project, feel free to buy <b>pizza</b> :pizza: or :beers: for devs (or a present :rose: :gift: for my gf, she is a bit mad that i'm spending most part of my free time for this project :coffee:):<br/><br/>
@@ -41,7 +46,9 @@ If you have any problems with getting device info, consider watching this post: 
 
 <h2>Credits</h2>
 Thanks to Feroxs' hard work on the API & Console we are able to manage something like this.
-Without him, this would not have been available.
+Without him, this would not have been available.</br>
+Design ideas: <i><b>[@Morphir](https://github.com/ephran)</b> - Poke info design</i>, <i><b>Su**ro</b> - initial design idea</i>
+
  
  
  <h2>Rights</h2>
